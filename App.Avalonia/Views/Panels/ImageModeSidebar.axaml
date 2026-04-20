@@ -12,15 +12,15 @@
           <TextBlock Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Text="模板"/>
           <RadioButton Grid.Row="0" Grid.Column="1" GroupName="TemplateSource" IsChecked="{Binding IsTemplateSourceCurrent}" Content="当前"/>
           <RadioButton Grid.Row="0" Grid.Column="2" GroupName="TemplateSource" IsChecked="{Binding IsTemplateSourceBrowse}" Content="浏览"/>
-          <Button Grid.Row="0" Grid.Column="3" Classes="base-action" Content="浏览" IsEnabled="False"/>
+          <Button Grid.Row="0" Grid.Column="3" Classes="base-action" Content="浏览" Command="{Binding BrowseTemplateImageCommand}"/>
 
           <TextBlock Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" Text="截图"/>
           <RadioButton Grid.Row="1" Grid.Column="1" GroupName="ScreenshotSource" IsChecked="{Binding IsScreenshotSourceCurrent}" Content="当前"/>
           <RadioButton Grid.Row="1" Grid.Column="2" GroupName="ScreenshotSource" IsChecked="{Binding IsScreenshotSourceBrowse}" Content="浏览"/>
-          <Button Grid.Row="1" Grid.Column="3" Classes="base-action" Content="浏览" IsEnabled="False"/>
+          <Button Grid.Row="1" Grid.Column="3" Classes="base-action" Content="浏览" Command="{Binding LoadScreenshotImageCommand}"/>
         </Grid>
 
-        <TextBlock Classes="caption-muted" Text="当前截图与模板来源将在 4.5 主工作流接入后生效。" TextWrapping="Wrap"/>
+        <TextBlock Classes="caption-muted" Text="当前截图与模板来源已接入主工作流，可直接用于匹配测试与代码生成。" TextWrapping="Wrap"/>
       </StackPanel>
     </Border>
 
@@ -30,7 +30,7 @@
 
         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
           <TextBox Grid.Column="0" Classes="panel-input" Text="{Binding OperationInputText}" IsReadOnly="True"/>
-          <Button Grid.Column="1" Classes="base-action" Content="复制" IsEnabled="False"/>
+          <Button Grid.Column="1" Classes="base-action" Content="复制" Command="{Binding CopyOperationTextCommand}" IsEnabled="{Binding CanCopyOperationText}"/>
         </Grid>
 
         <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
@@ -41,7 +41,7 @@
 
         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
           <CheckBox Grid.Column="0" Classes="inline-check" IsChecked="{Binding SearchAllScreen}" Content="全图搜索（默认优先使用区域搜索）"/>
-          <Button Grid.Column="1" Classes="base-action primary-action" Content="执行测试" IsEnabled="{Binding ArePrimaryWorkflowActionsEnabled}"/>
+          <Button Grid.Column="1" Classes="base-action primary-action" Content="执行测试" Command="{Binding RunTemplateMatchCommand}" IsEnabled="{Binding CanRunTemplateMatch}"/>
         </Grid>
 
         <Border Background="{DynamicResource AppBackgroundBrush}" CornerRadius="14" Padding="12">
@@ -50,8 +50,8 @@
 
         <TextBlock Classes="caption-muted" Text="{Binding TemplateDirectoryText}" TextWrapping="Wrap"/>
         <TextBox Classes="panel-input" PlaceholderText="模板名（留空自动生成）" Text="{Binding TemplateName}"/>
+        <Button Classes="base-action" Content="导出模板" Command="{Binding ExportTemplateCommand}" IsEnabled="{Binding CanExportTemplate}"/>
       </StackPanel>
     </Border>
   </StackPanel>
 </UserControl>
-

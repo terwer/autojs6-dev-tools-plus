@@ -7,6 +7,7 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Core.Models;
+using System.Globalization;
 
 namespace App.Avalonia.Controls;
 
@@ -658,6 +659,20 @@ public sealed class WorkbenchCanvasControl : Control
         {
             var pen = new Pen(new SolidColorBrush(overlay.StrokeColor), overlay.StrokeThickness);
             context.DrawRectangle(null, pen, overlay.PixelRect);
+
+            if (!string.IsNullOrWhiteSpace(overlay.Label))
+            {
+                var labelBrush = new SolidColorBrush(overlay.LabelColor ?? overlay.StrokeColor);
+                var text = new FormattedText(
+                    overlay.Label,
+                    CultureInfo.CurrentUICulture,
+                    FlowDirection.LeftToRight,
+                    new Typeface(FontFamily.Default, FontStyle.Normal, FontWeight.SemiBold),
+                    14,
+                    labelBrush);
+
+                context.DrawText(text, new Point(overlay.PixelRect.X + 4, Math.Max(0, overlay.PixelRect.Y - 22)));
+            }
         }
     }
 

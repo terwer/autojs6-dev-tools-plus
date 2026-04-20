@@ -12,15 +12,18 @@ public partial class MainWindow : Window
 {
     private const string WindowId = "main-window";
     private readonly IWindowStateService? _windowStateService;
+    private readonly IClipboardService? _clipboardService;
+    private MainWindowViewModel? _viewModel;
 
     public MainWindow()
-        : this(null)
+        : this(null, null)
     {
     }
 
-    public MainWindow(IWindowStateService? windowStateService)
+    public MainWindow(IWindowStateService? windowStateService, IClipboardService? clipboardService)
     {
         _windowStateService = windowStateService;
+        _clipboardService = clipboardService;
         InitializeComponent();
         Opened += OnOpened;
         Closing += OnClosing;
@@ -30,28 +33,40 @@ public partial class MainWindow : Window
         WorkbenchCanvas.PointerInfoChanged += OnCanvasPointerInfoChanged;
     }
 
+    protected override void OnDataContextChanged(EventArgs e)
+    {
+        if (_viewModel is not null)
+        {
+            _viewModel.CodePreviewRequested -= OnCodePreviewRequested;
+        }
+
+        _viewModel = DataContext as MainWindowViewModel;
+        if (_viewModel is not null)
+        {
+            _viewModel.CodePreviewRequested += OnCodePreviewRequested;
+        }
+
+        base.OnDataContextChanged(e);
+    }
+
     private async void OnOpened(object? sender, EventArgs e)
     {
-        if (_windowStateService is null)
+        if (_windowStateService is not null)
         {
-            return;
+            var snapshot = await _windowStateService.RestoreAsync(WindowId);
+            if (snapshot is not null)
+            {
+                Width = snapshot.Width;
+                Height = snapshot.Height;
+                Position = new PixelPoint((int)snapshot.X, (int)snapshot.Y);
+                WindowState = snapshot.State switch
+                {
+                    DesktopWindowState.Maximized => WindowState.Maximized,
+                    DesktopWindowState.FullScreen => WindowState.FullScreen,
+                    _ => WindowState.Normal
+                };
+            }
         }
-
-        var snapshot = await _windowStateService.RestoreAsync(WindowId);
-        if (snapshot is null)
-        {
-            return;
-        }
-
-        Width = snapshot.Width;
-        Height = snapshot.Height;
-        Position = new PixelPoint((int)snapshot.X, (int)snapshot.Y);
-        WindowState = snapshot.State switch
-        {
-            DesktopWindowState.Maximized => WindowState.Maximized,
-            DesktopWindowState.FullScreen => WindowState.FullScreen,
-            _ => WindowState.Normal
-        };
     }
 
     private void OnClosing(object? sender, WindowClosingEventArgs e)
@@ -73,18 +88,22 @@ public partial class MainWindow : Window
 
     private void OnCanvasViewportChanged(object? sender, CanvasViewportChangedEventArgs e)
     {
-        if (DataContext is MainWindowViewModel viewModel)
-        {
-            viewModel.UpdateCanvasViewportState(e.ZoomFactor, e.PanOffset.X, e.PanOffset.Y, e.RotationDegrees);
-        }
+        _viewModel?.UpdateCanvasViewportState(e.ZoomFactor, e.PanOffset.X, e.PanOffset.Y, e.RotationDegrees);
     }
 
     private void OnCanvasPointerInfoChanged(object? sender, CanvasPointerInfoChangedEventArgs e)
     {
-        if (DataContext is MainWindowViewModel viewModel)
+        _viewModel?.UpdateCanvasPointerState(e.PixelX, e.PixelY, e.IsCrosshairVisible);
+    }
+
+    private async void OnCodePreviewRequested(object? sender, string code)
+    {
+        var previewWindow = new CodePreviewWindow(code, _clipboardService)
         {
-            viewModel.UpdateCanvasPointerState(e.PixelX, e.PixelY, e.IsCrosshairVisible);
-        }
+            WindowStartupLocation = WindowStartupLocation.CenterOwner
+        };
+
+        await previewWindow.ShowDialog(this);
     }
 
     private static DesktopWindowState MapWindowState(WindowState state)

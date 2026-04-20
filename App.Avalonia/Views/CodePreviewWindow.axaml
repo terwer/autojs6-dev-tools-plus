@@ -1,0 +1,23 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="App.Avalonia.Views.CodePreviewWindow"
+        Width="900"
+        Height="680"
+        MinWidth="720"
+        MinHeight="520"
+        Title="代码预览">
+  <Grid RowDefinitions="Auto,*,Auto" RowSpacing="12" Margin="14">
+    <TextBlock FontSize="18" FontWeight="SemiBold" Text="AutoJS6 代码预览"/>
+    <TextBox x:Name="CodeTextBox"
+             Grid.Row="1"
+             IsReadOnly="True"
+             AcceptsReturn="True"
+             TextWrapping="NoWrap"
+             FontFamily="Consolas, Cascadia Code, Microsoft YaHei UI"
+             FontSize="13"/>
+    <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
+      <Button x:Name="CopyButton" Content="复制代码"/>
+      <Button x:Name="CloseButton" Content="关闭"/>
+    </StackPanel>
+  </Grid>
+</Window>

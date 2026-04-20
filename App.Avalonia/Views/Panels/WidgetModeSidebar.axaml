@@ -8,15 +8,15 @@
       <StackPanel Spacing="12">
         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
           <TextBlock Classes="title-lg" VerticalAlignment="Center" Text="节点树"/>
-          <Button Grid.Column="1" Classes.base-action="True" Classes.primary-action="True" Content="拉取 UI 树" IsEnabled="False"/>
+          <Button Grid.Column="1" Classes.base-action="True" Classes.primary-action="True" Content="拉取 UI 树" Command="{Binding PullUiTreeCommand}" IsEnabled="{Binding CanPullUiTree}"/>
         </Grid>
 
         <TextBox Classes="panel-input" PlaceholderText="搜索 class / text / desc / resource-id" Text="{Binding WidgetTreeSearchText}"/>
-        <TextBlock Classes="caption-muted" Text="显示 0 个业务节点"/>
+        <TextBlock Classes="caption-muted" Text="{Binding WidgetTreeSummaryText}"/>
 
         <Border Background="{DynamicResource AppBackgroundBrush}" CornerRadius="14" Padding="12" MinHeight="220">
           <Grid>
-            <TreeView ItemsSource="{Binding WidgetNodes}" IsVisible="{Binding HasWidgetNodes}">
+            <TreeView ItemsSource="{Binding WidgetNodes}" SelectedItem="{Binding SelectedWidgetTreeNode, Mode=TwoWay}" IsVisible="{Binding HasWidgetNodes}">
               <TreeView.ItemTemplate>
                 <TreeDataTemplate ItemsSource="{Binding Children}" x:DataType="vm:WidgetTreeNodeViewModel">
                   <StackPanel Spacing="2">
@@ -50,12 +50,13 @@
         </Border>
 
         <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
-          <Button Grid.Column="0" Classes.base-action="True" Content="复制坐标" IsEnabled="False"/>
-          <Button Grid.Column="1" Classes.base-action="True" Content="复制 UiSelector" IsEnabled="False"/>
-          <Button Grid.Column="2" Classes.base-action="True" Classes.primary-action="True" Content="查看代码" IsEnabled="False"/>
+          <Button Grid.Column="0" Classes.base-action="True" Content="复制坐标" Command="{Binding CopySelectedWidgetCoordinatesCommand}" IsEnabled="{Binding CanCopySelectedWidgetCoordinates}"/>
+          <Button Grid.Column="1" Classes.base-action="True" Content="复制 UiSelector" Command="{Binding CopySelectedWidgetSelectorCommand}" IsEnabled="{Binding CanCopySelectedWidgetSelector}"/>
+          <Button Grid.Column="2" Classes.base-action="True" Classes.primary-action="True" Content="查看代码" Command="{Binding OpenCodePreviewCommand}" IsEnabled="{Binding CanGenerateCode}"/>
         </Grid>
       </StackPanel>
     </Border>
   </StackPanel>
 </UserControl>
+
 

@@ -51,9 +51,9 @@
         </Border>
 
         <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10">
-          <Button Classes.base-action="True" Classes.primary-action="True" Content="截屏" IsEnabled="{Binding ArePrimaryWorkflowActionsEnabled}"/>
-          <Button Classes.base-action="True" Content="载入图片" IsEnabled="False"/>
-          <Button Classes.base-action="True" Content="查看代码" IsEnabled="False"/>
+          <Button Classes.base-action="True" Classes.primary-action="True" Content="截屏" Command="{Binding CaptureScreenshotCommand}" IsEnabled="{Binding CanCaptureScreenshot}"/>
+          <Button Classes.base-action="True" Content="载入图片" Command="{Binding LoadScreenshotImageCommand}"/>
+          <Button Classes.base-action="True" Content="查看代码" Command="{Binding OpenCodePreviewCommand}" IsEnabled="{Binding CanGenerateCode}"/>
         </StackPanel>
       </Grid>
     </Border>
@@ -62,8 +62,8 @@
       <Grid Grid.Column="0" RowDefinitions="Auto,*" RowSpacing="12">
         <Border Grid.Row="0" Classes="surface-card section-card">
           <UniformGrid Columns="3" Rows="1">
-            <Button Classes.base-action="True" Content="刷新" IsEnabled="False" Margin="0,0,8,0"/>
-            <Button Classes.base-action="True" Content="扫描" IsEnabled="False" Margin="4,0"/>
+            <Button Classes.base-action="True" Content="刷新" Command="{Binding RefreshDevicesCommand}" Margin="0,0,8,0"/>
+            <Button Classes.base-action="True" Content="扫描" Command="{Binding RefreshDevicesCommand}" Margin="4,0"/>
             <Button Classes.base-action="True" Content="无线" IsEnabled="False" Margin="8,0,0,0"/>
           </UniformGrid>
         </Border>
@@ -119,7 +119,7 @@
             </StackPanel>
 
             <StackPanel Orientation="Horizontal" Spacing="10" IsVisible="{Binding IsWidgetMode}">
-              <Button Classes.base-action="True" Content="拉取 UI 树" IsEnabled="False"/>
+              <Button Classes.base-action="True" Content="拉取 UI 树" Command="{Binding PullUiTreeCommand}" IsEnabled="{Binding CanPullUiTree}"/>
               <Button x:Name="RotateWidgetButton" Classes.base-action="True" Content="旋转 90°" IsEnabled="{Binding HasCanvasContent}"/>
               <CheckBox Classes="inline-check" VerticalAlignment="Center" IsChecked="{Binding IsWidgetBoundsVisible}" Content="显示控件框"/>
             </StackPanel>
@@ -147,8 +147,8 @@
                            TextWrapping="Wrap"
                            Text="{Binding CanvasPlaceholderDescription}"/>
                 <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
-                  <Button Classes.base-action="True" Classes.primary-action="True" Content="立即截屏" IsEnabled="False"/>
-                  <Button Classes.base-action="True" Content="载入图片" IsEnabled="False"/>
+                  <Button Classes.base-action="True" Classes.primary-action="True" Content="立即截屏" Command="{Binding CaptureScreenshotCommand}" IsEnabled="{Binding CanCaptureScreenshot}"/>
+                  <Button Classes.base-action="True" Content="载入图片" Command="{Binding LoadScreenshotImageCommand}"/>
                 </StackPanel>
               </StackPanel>
             </Border>
@@ -196,3 +196,4 @@
     </Border>
   </Grid>
 </Window>
+
