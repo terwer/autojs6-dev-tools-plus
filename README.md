@@ -6,10 +6,10 @@
 
 🎯 A cross-platform development toolkit for AutoJS6 script developers, with visual screenshot analysis, UI widget parsing, image matching preview, and AutoJS6 script code generation.
 
-> **Choose the edition that matches your platform priorities**  
-> `autojs6-dev-tools-plus` is the cross-platform edition for Windows and macOS workflows.  
-> If your focus is a Windows-only, performance-first experience, use `autojs6-dev-tools`.  
-> Both projects are original works created and maintained by me, with each serving a distinct product goal within the same toolkit family.
+> **Choose the edition that fits your platform strategy**  
+> `autojs6-dev-tools-plus` is the Cross-platform edition for Windows and macOS.  
+> For the Windows-native edition, see [`autojs6-dev-tools`](https://github.com/terwer/autojs6-dev-tools).  
+> Both projects are original works that I design and maintain as part of the same AutoJS6 toolkit family.
 
 > **Image recognition takes 20 tries to work? Breaks on different devices?**  
 > Use this tool: Real-time match preview • Visual threshold and region adjustment • Auto-generate AutoJS6 code • Windows and macOS first
