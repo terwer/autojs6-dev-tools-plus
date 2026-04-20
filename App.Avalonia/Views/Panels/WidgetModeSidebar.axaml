@@ -78,12 +78,30 @@
           <TextBlock Text="{Binding WidgetSelectionHint}" TextWrapping="Wrap"/>
         </Border>
 
+        <Border Background="{DynamicResource AppBackgroundBrush}" CornerRadius="14" Padding="12">
+          <TextBlock Text="{Binding SelectorValidationReport}" TextWrapping="Wrap"/>
+        </Border>
+
+        <Border Background="{DynamicResource AppBackgroundBrush}" CornerRadius="14" Padding="12">
+          <TextBlock Text="{Binding AlignmentValidationReport}" TextWrapping="Wrap"/>
+        </Border>
+
         <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="10">
           <Button Grid.Column="0" Classes.base-action="True" Content="复制坐标" Command="{Binding CopySelectedWidgetCoordinatesCommand}" IsEnabled="{Binding CanCopySelectedWidgetCoordinates}"/>
           <Button Grid.Column="1" Classes.base-action="True" Content="复制 XPath" Command="{Binding CopySelectedWidgetXPathCommand}" IsEnabled="{Binding CanCopySelectedWidgetXPath}"/>
           <Button Grid.Row="1" Grid.Column="0" Classes.base-action="True" Content="复制 UiSelector" Command="{Binding CopySelectedWidgetSelectorCommand}" IsEnabled="{Binding CanCopySelectedWidgetSelector}"/>
           <Button Grid.Row="1" Grid.Column="1" Classes.base-action="True" Classes.primary-action="True" Content="查看代码" Command="{Binding OpenCodePreviewCommand}" IsEnabled="{Binding CanGenerateCode}"/>
         </Grid>
+
+        <Button Classes="base-action"
+                Content="验证选择器"
+                Command="{Binding ValidateSelectedWidgetSelectorCommand}"
+                IsEnabled="{Binding CanValidateSelectedWidgetSelector}"/>
+
+        <Button Classes="base-action"
+                Content="验证坐标对齐"
+                Command="{Binding ValidateCoordinateAlignmentCommand}"
+                IsEnabled="{Binding CanValidateCoordinateAlignment}"/>
       </StackPanel>
     </Border>
   </StackPanel>

@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using App.Avalonia.Models;
 using App.Avalonia.ViewModels;
+using Core.Abstractions;
 using Core.Abstractions.Desktop;
 using Core.Models.Desktop;
 
@@ -13,17 +14,25 @@ public partial class MainWindow : Window
     private const string WindowId = "main-window";
     private readonly IWindowStateService? _windowStateService;
     private readonly IClipboardService? _clipboardService;
+    private readonly IFileSaveDialogService? _fileSaveDialogService;
+    private readonly ICodeGenerator? _codeGenerator;
     private MainWindowViewModel? _viewModel;
 
     public MainWindow()
-        : this(null, null)
+        : this(null, null, null, null)
     {
     }
 
-    public MainWindow(IWindowStateService? windowStateService, IClipboardService? clipboardService)
+    public MainWindow(
+        IWindowStateService? windowStateService,
+        IClipboardService? clipboardService,
+        IFileSaveDialogService? fileSaveDialogService,
+        ICodeGenerator? codeGenerator)
     {
         _windowStateService = windowStateService;
         _clipboardService = clipboardService;
+        _fileSaveDialogService = fileSaveDialogService;
+        _codeGenerator = codeGenerator;
         InitializeComponent();
         Opened += OnOpened;
         Closing += OnClosing;
@@ -100,7 +109,7 @@ public partial class MainWindow : Window
 
     private async void OnCodePreviewRequested(object? sender, string code)
     {
-        var previewWindow = new CodePreviewWindow(code, _clipboardService)
+        var previewWindow = new CodePreviewWindow(code, _clipboardService, _fileSaveDialogService, _codeGenerator)
         {
             WindowStartupLocation = WindowStartupLocation.CenterOwner
         };

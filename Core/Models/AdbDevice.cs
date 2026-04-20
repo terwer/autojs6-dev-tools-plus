@@ -38,5 +38,7 @@ public sealed class AdbDevice
     /// <summary>
     /// 是否为在线设备。
     /// </summary>
-    public bool IsOnline => string.Equals(State, "device", StringComparison.OrdinalIgnoreCase);
+    public bool IsOnline =>
+        string.Equals(State, "device", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(State, "online", StringComparison.OrdinalIgnoreCase);
 }

@@ -27,9 +27,12 @@ public partial class MainWindowViewModel
     private readonly IWorkbenchFilePickerService? _filePickerService;
     private readonly List<CanvasOverlayRect> _widgetOverlays = [];
     private readonly List<CanvasOverlayRect> _matchOverlays = [];
+    private readonly List<CanvasOverlayRect> _selectorValidationOverlays = [];
     private readonly HashSet<WidgetNode> _expandedWidgetNodes = [];
+    private readonly HashSet<WidgetNode> _selectorValidationNodes = [];
     private readonly List<MatchResult> _cachedMatchCandidates = [];
     private IReadOnlyList<WidgetNode> _currentFilteredWidgetNodes = Array.Empty<WidgetNode>();
+    private readonly List<string> _batchTemplatePaths = [];
     private byte[]? _currentScreenshotBytes;
     private byte[]? _currentTemplateBytes;
     private string? _currentScreenshotPath;
@@ -38,6 +41,7 @@ public partial class MainWindowViewModel
     private WidgetNode? _widgetRoot;
     private MatchResult? _cachedBestMatch;
     private string? _generatedCode;
+    private CancellationTokenSource? _operationCancellationTokenSource;
 
     public MainWindowViewModel(
         IAdbService adbService,
@@ -75,7 +79,13 @@ public partial class MainWindowViewModel
     private bool _isBusy;
 
     [ObservableProperty]
+    private bool _isOperationCancelable;
+
+    [ObservableProperty]
     private string _widgetTreeSummaryText = "显示 0 个业务节点";
+
+    [ObservableProperty]
+    private string _batchTemplateSummaryText = "未选择批量模板";
 
     public bool CanCaptureScreenshot => SelectedDevice is not null && !IsBusy;
 
@@ -85,6 +95,8 @@ public partial class MainWindowViewModel
         HasCanvasContent &&
         !IsBusy &&
         (IsTemplateSourceBrowse ? _currentTemplateBytes is not null : CropRegion is not null && !CropRegion.IsEmpty);
+
+    public bool CanRunBatchTemplateMatch => HasCanvasContent && !IsBusy && _batchTemplatePaths.Count > 0;
 
     public bool CanExportTemplate => HasCanvasContent && CropRegion is not null && !CropRegion.IsEmpty && !IsBusy;
 
@@ -102,6 +114,10 @@ public partial class MainWindowViewModel
 
     public bool CanCopySelectedWidgetSelector => SelectedWidgetTreeNode is not null;
 
+    public bool CanValidateSelectedWidgetSelector => SelectedWidgetTreeNode is not null && _widgetRoot is not null;
+
+    public bool CanValidateCoordinateAlignment => _widgetRoot is not null && HasCanvasContent;
+
     private void OnWorkflowPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         switch (e.PropertyName)
@@ -109,6 +125,10 @@ public partial class MainWindowViewModel
             case nameof(CurrentMode):
             case nameof(IsWidgetBoundsVisible):
                 OnPropertyChanged(nameof(CanGenerateCode));
+                if (e.PropertyName == nameof(CurrentMode) && CurrentMode != WorkbenchMode.Widget)
+                {
+                    ClearSelectorValidation();
+                }
                 RefreshCanvasOverlays();
                 break;
             case nameof(ShowTextWidgets):
@@ -139,6 +159,7 @@ public partial class MainWindowViewModel
                 OnPropertyChanged(nameof(CanCaptureScreenshot));
                 OnPropertyChanged(nameof(CanPullUiTree));
                 OnPropertyChanged(nameof(CanRunTemplateMatch));
+                OnPropertyChanged(nameof(CanRunBatchTemplateMatch));
                 OnPropertyChanged(nameof(CanExportTemplate));
                 OnPropertyChanged(nameof(CanGenerateCode));
                 break;
@@ -247,6 +268,25 @@ public partial class MainWindowViewModel
     }
 
     [RelayCommand]
+    private async Task BrowseBatchTemplatesAsync()
+    {
+        await ExecuteBusyAsync(async () =>
+        {
+            var files = await _filePickerService!.PickImageFilesAsync("选择批量模板图片");
+            if (files.Count == 0)
+            {
+                return;
+            }
+
+            _batchTemplatePaths.Clear();
+            _batchTemplatePaths.AddRange(files);
+            BatchTemplateSummaryText = $"已选择 {_batchTemplatePaths.Count} 个模板";
+            FooterStatusText = BatchTemplateSummaryText;
+            OnPropertyChanged(nameof(CanRunBatchTemplateMatch));
+        }, "选择批量模板失败");
+    }
+
+    [RelayCommand]
     private async Task PullUiTreeAsync()
     {
         if (SelectedDevice is null)
@@ -272,6 +312,7 @@ public partial class MainWindowViewModel
                 throw new InvalidOperationException("UI dump 解析失败，未生成有效节点树。");
             }
 
+            ClearSelectorValidation();
             _widgetRoot = root;
             SeedExpandedNodes(root, maxDepthInclusive: 2);
             await RebuildFlatWidgetTreeAsync(WidgetTreeSearchText);
@@ -289,11 +330,11 @@ public partial class MainWindowViewModel
             return;
         }
 
-        await ExecuteBusyAsync(async () =>
+        await ExecuteCancelableBusyAsync(async cancellationToken =>
         {
             var templateBytes = await ResolveTemplateBytesAsync();
             var searchRegion = SearchAllScreen ? null : CropRegion;
-            var bestMatch = await _openCvMatchService!.MatchTemplateAsync(_currentScreenshotBytes, templateBytes, 0d, searchRegion);
+            var bestMatch = await _openCvMatchService!.MatchTemplateAsync(_currentScreenshotBytes, templateBytes, 0d, searchRegion, cancellationToken);
             if (bestMatch is null)
             {
                 throw new InvalidOperationException("模板匹配执行失败，未返回结果。");
@@ -301,10 +342,72 @@ public partial class MainWindowViewModel
 
             _cachedBestMatch = bestMatch;
             _cachedMatchCandidates.Clear();
-            var candidates = await _openCvMatchService.MatchTemplateMultiAsync(_currentScreenshotBytes, templateBytes, 0.5d, searchRegion);
+            var candidates = await _openCvMatchService.MatchTemplateMultiAsync(_currentScreenshotBytes, templateBytes, 0.5d, searchRegion, cancellationToken);
             _cachedMatchCandidates.AddRange(candidates.OrderByDescending(item => item.Confidence));
             ApplyMatchResultsFromCache();
         }, "执行匹配失败");
+    }
+
+    [RelayCommand]
+    private async Task RunBatchTemplateMatchAsync()
+    {
+        if (_currentScreenshotBytes is null)
+        {
+            await ShowMessageAsync(UserMessageSeverity.Warning, "缺少截图", "请先截屏或载入截图图片。", CancellationToken.None);
+            return;
+        }
+
+        if (_batchTemplatePaths.Count == 0)
+        {
+            await ShowMessageAsync(UserMessageSeverity.Warning, "缺少批量模板", "请先选择一组批量模板图片。", CancellationToken.None);
+            return;
+        }
+
+        await ExecuteCancelableBusyAsync(async cancellationToken =>
+        {
+            var searchRegion = SearchAllScreen ? null : CropRegion;
+            var successCount = 0;
+            var failureCount = 0;
+            long totalElapsed = 0;
+            var lines = new List<string> { $"批量模板测试：{_batchTemplatePaths.Count} 个模板" };
+
+            foreach (var templatePath in _batchTemplatePaths)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var templateBytes = await File.ReadAllBytesAsync(templatePath, cancellationToken);
+                var match = await _openCvMatchService!.MatchTemplateAsync(_currentScreenshotBytes, templateBytes, MatchThreshold, searchRegion, cancellationToken);
+                if (match is null)
+                {
+                    failureCount++;
+                    lines.Add($"- {Path.GetFileName(templatePath)}：执行失败");
+                    continue;
+                }
+
+                totalElapsed += match.ElapsedMilliseconds;
+                if (match.IsMatch)
+                {
+                    successCount++;
+                    lines.Add($"- {Path.GetFileName(templatePath)}：命中 ({match.ClickX}, {match.ClickY}) / {match.Confidence:F3}");
+                }
+                else
+                {
+                    failureCount++;
+                    lines.Add($"- {Path.GetFileName(templatePath)}：未命中 / {match.Confidence:F3}");
+                }
+            }
+
+            lines.Add($"汇总：成功 {successCount}，失败 {failureCount}，总耗时 {totalElapsed} ms");
+            MatchResultSummary = string.Join(Environment.NewLine, lines);
+            FooterStatusText = $"批量模板测试完成：成功 {successCount} / {_batchTemplatePaths.Count}";
+            _matchOverlays.Clear();
+            RefreshCanvasOverlays();
+        }, "批量模板测试失败");
+    }
+
+    [RelayCommand]
+    private void CancelRunningOperation()
+    {
+        _operationCancellationTokenSource?.Cancel();
     }
 
     [RelayCommand]
@@ -402,6 +505,94 @@ public partial class MainWindowViewModel
 
         await _clipboardService!.SetTextAsync(xpath);
         FooterStatusText = "已复制 XPath";
+    }
+
+    [RelayCommand]
+    private async Task ValidateSelectedWidgetSelectorAsync()
+    {
+        if (SelectedWidgetTreeNode is null || _widgetRoot is null)
+        {
+            return;
+        }
+
+        await ExecuteBusyAsync(async () =>
+        {
+            var target = SelectedWidgetTreeNode.Node;
+            var matches = FindSelectorValidationMatches(target);
+
+            _selectorValidationNodes.Clear();
+            foreach (var node in matches)
+            {
+                _selectorValidationNodes.Add(node);
+            }
+
+            await RebuildFlatWidgetTreeAsync(WidgetTreeSearchText);
+
+            _selectorValidationOverlays.Clear();
+            foreach (var node in matches.Where(item => item.BoundsRect.Width > 0 && item.BoundsRect.Height > 0))
+            {
+                _selectorValidationOverlays.Add(new CanvasOverlayRect(
+                    new global::Avalonia.Rect(node.BoundsRect.X, node.BoundsRect.Y, node.BoundsRect.Width, node.BoundsRect.Height),
+                    Color.Parse("#3AD67F"),
+                    2.2,
+                    "selector",
+                    Color.Parse("#3AD67F")));
+            }
+
+            RefreshCanvasOverlays();
+
+            if (matches.Count > 0)
+            {
+                var first = matches[0];
+                SelectorValidationReport = $"验证成功：匹配 {matches.Count} 个节点；首个节点 bounds = [{first.BoundsRect.X}, {first.BoundsRect.Y}, {first.BoundsRect.Width}, {first.BoundsRect.Height}]";
+                FooterStatusText = $"选择器验证成功：{matches.Count} 个匹配节点";
+                SelectedWidgetTreeNode = WidgetNodes.FirstOrDefault(item => ReferenceEquals(item.Node, matches[0]));
+            }
+            else
+            {
+                SelectorValidationReport = "验证失败：当前 UI 树中没有匹配节点，请检查 resource-id、text、content-desc 或 bounds 过滤。";
+                FooterStatusText = "选择器验证失败";
+            }
+
+            await Task.CompletedTask;
+        }, "验证选择器失败");
+    }
+
+    [RelayCommand]
+    private async Task ValidateCoordinateAlignmentAsync()
+    {
+        if (_widgetRoot is null || CanvasBitmap is null)
+        {
+            return;
+        }
+
+        await ExecuteBusyAsync(async () =>
+        {
+            var screenshotWidth = CanvasBitmap.PixelSize.Width;
+            var screenshotHeight = CanvasBitmap.PixelSize.Height;
+
+            var rootRect = _widgetRoot.BoundsRect;
+            var baselineWidth = rootRect.Width;
+            var baselineHeight = rootRect.Height;
+
+            if (baselineWidth <= 0 || baselineHeight <= 0)
+            {
+                var nodes = _uiDumpParser!.FilterNodes(_widgetRoot);
+                baselineWidth = nodes.Max(node => node.BoundsRect.X + node.BoundsRect.Width);
+                baselineHeight = nodes.Max(node => node.BoundsRect.Y + node.BoundsRect.Height);
+            }
+
+            var deltaWidth = screenshotWidth - baselineWidth;
+            var deltaHeight = screenshotHeight - baselineHeight;
+            var aligned = Math.Abs(deltaWidth) <= 2 && Math.Abs(deltaHeight) <= 2;
+
+            AlignmentValidationReport = aligned
+                ? $"对齐成功：截图 {screenshotWidth}x{screenshotHeight}，dump 基线 {baselineWidth}x{baselineHeight}，误差 ({deltaWidth}, {deltaHeight})。"
+                : $"对齐失败：截图 {screenshotWidth}x{screenshotHeight}，dump 基线 {baselineWidth}x{baselineHeight}，误差 ({deltaWidth}, {deltaHeight})，请检查分辨率、截图来源或方向。";
+
+            FooterStatusText = aligned ? "坐标对齐验证通过" : "坐标对齐验证失败";
+            await Task.CompletedTask;
+        }, "验证坐标对齐失败");
     }
 
     [RelayCommand]
@@ -536,6 +727,7 @@ public partial class MainWindowViewModel
         OnPropertyChanged(nameof(CanCopySelectedWidgetCoordinates));
         OnPropertyChanged(nameof(CanCopySelectedWidgetXPath));
         OnPropertyChanged(nameof(CanCopySelectedWidgetSelector));
+        OnPropertyChanged(nameof(CanValidateSelectedWidgetSelector));
         RefreshCanvasOverlays();
 
         if (CurrentMode == WorkbenchMode.Widget && SelectedWidgetTreeNode is not null)
@@ -704,7 +896,8 @@ public partial class MainWindowViewModel
             string.IsNullOrWhiteSpace(node.ResourceId) ? node.ClassName : node.ResourceId,
             depth)
         {
-            IsExpanded = hasFilter ? (descendantMatched || selfMatches) : _expandedWidgetNodes.Contains(node)
+            IsExpanded = hasFilter ? (descendantMatched || selfMatches) : _expandedWidgetNodes.Contains(node),
+            IsValidationMatch = _selectorValidationNodes.Contains(node)
         };
 
         output.Add(viewModel);
@@ -756,6 +949,54 @@ public partial class MainWindowViewModel
         }
 
         return GetSimpleClassName(node.ClassName);
+    }
+
+    private IReadOnlyList<WidgetNode> FindSelectorValidationMatches(WidgetNode target)
+    {
+        if (_widgetRoot is null || _uiDumpParser is null)
+        {
+            return Array.Empty<WidgetNode>();
+        }
+
+        IReadOnlyList<WidgetNode> candidates;
+        if (!string.IsNullOrWhiteSpace(target.ResourceId))
+        {
+            candidates = _uiDumpParser.FindNodes(_widgetRoot, resourceId: target.ResourceId);
+        }
+        else if (!string.IsNullOrWhiteSpace(target.Text))
+        {
+            candidates = _uiDumpParser.FindNodes(_widgetRoot, text: target.Text);
+        }
+        else if (!string.IsNullOrWhiteSpace(target.ContentDesc))
+        {
+            candidates = _uiDumpParser.FindNodes(_widgetRoot, contentDesc: target.ContentDesc);
+        }
+        else
+        {
+            candidates = _uiDumpParser.FindNodes(_widgetRoot, className: target.ClassName);
+        }
+
+        var (x, y, width, height) = target.BoundsRect;
+        if (width <= 0 || height <= 0)
+        {
+            return candidates;
+        }
+
+        var right = x + width;
+        var bottom = y + height;
+
+        return candidates
+            .Where(node =>
+            {
+                var rect = node.BoundsRect;
+                return rect.Width > 0 &&
+                       rect.Height > 0 &&
+                       rect.X >= x &&
+                       rect.Y >= y &&
+                       rect.X + rect.Width <= right &&
+                       rect.Y + rect.Height <= bottom;
+            })
+            .ToArray();
     }
 
     private static string BuildXPath(WidgetNode root, WidgetNode target)
@@ -914,6 +1155,13 @@ public partial class MainWindowViewModel
         return Color.FromArgb(alpha, color.R, color.G, color.B);
     }
 
+    private void ClearSelectorValidation()
+    {
+        _selectorValidationNodes.Clear();
+        _selectorValidationOverlays.Clear();
+        SelectorValidationReport = "尚未执行选择器验证。";
+    }
+
     private void RefreshCanvasOverlays()
     {
         CanvasOverlays.Clear();
@@ -921,6 +1169,11 @@ public partial class MainWindowViewModel
         if (IsWidgetMode)
         {
             foreach (var overlay in _widgetOverlays)
+            {
+                CanvasOverlays.Add(overlay);
+            }
+
+            foreach (var overlay in _selectorValidationOverlays)
             {
                 CanvasOverlays.Add(overlay);
             }
@@ -968,6 +1221,40 @@ public partial class MainWindowViewModel
         finally
         {
             IsBusy = false;
+        }
+    }
+
+    private async Task ExecuteCancelableBusyAsync(Func<CancellationToken, Task> action, string fallbackErrorTitle)
+    {
+        if (IsBusy)
+        {
+            return;
+        }
+
+        _operationCancellationTokenSource?.Dispose();
+        _operationCancellationTokenSource = new CancellationTokenSource();
+
+        try
+        {
+            IsBusy = true;
+            IsOperationCancelable = true;
+            await action(_operationCancellationTokenSource.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            FooterStatusText = "操作已取消";
+            await ShowMessageAsync(UserMessageSeverity.Warning, "操作已取消", "当前匹配任务已被中断。", CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            await ShowMessageAsync(UserMessageSeverity.Error, fallbackErrorTitle, ex.Message, CancellationToken.None);
+        }
+        finally
+        {
+            IsOperationCancelable = false;
+            IsBusy = false;
+            _operationCancellationTokenSource.Dispose();
+            _operationCancellationTokenSource = null;
         }
     }
 

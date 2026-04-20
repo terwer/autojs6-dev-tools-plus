@@ -50,7 +50,7 @@ public partial class App : Application
                 fileSaveDialogService,
                 filePickerService);
 
-            mainWindow = new MainWindow(windowStateService, clipboardService)
+            mainWindow = new MainWindow(windowStateService, clipboardService, fileSaveDialogService, codeGenerator)
             {
                 DataContext = viewModel
             };

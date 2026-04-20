@@ -33,4 +33,7 @@ public partial class WidgetTreeNodeViewModel : ViewModelBase
 
     [ObservableProperty]
     private bool _isExpanded;
+
+    [ObservableProperty]
+    private bool _isValidationMatch;
 }

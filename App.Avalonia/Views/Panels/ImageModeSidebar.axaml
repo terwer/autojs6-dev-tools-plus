@@ -44,6 +44,17 @@
           <Button Grid.Column="1" Classes="base-action primary-action" Content="执行测试" Command="{Binding RunTemplateMatchCommand}" IsEnabled="{Binding CanRunTemplateMatch}"/>
         </Grid>
 
+        <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+          <TextBlock Grid.Column="0" Classes="caption-muted" Text="{Binding BatchTemplateSummaryText}" VerticalAlignment="Center" TextWrapping="Wrap"/>
+          <Button Grid.Column="1" Classes="base-action" Content="批量模板" Command="{Binding BrowseBatchTemplatesCommand}"/>
+          <Button Grid.Column="2" Classes="base-action" Content="批量测试" Command="{Binding RunBatchTemplateMatchCommand}" IsEnabled="{Binding CanRunBatchTemplateMatch}"/>
+        </Grid>
+
+        <Button Classes="base-action"
+                Content="中断当前任务"
+                Command="{Binding CancelRunningOperationCommand}"
+                IsEnabled="{Binding IsOperationCancelable}"/>
+
         <Border Background="{DynamicResource AppBackgroundBrush}" CornerRadius="14" Padding="12">
           <TextBlock Text="{Binding MatchResultSummary}" TextWrapping="Wrap"/>
         </Border>

@@ -1,0 +1,54 @@
+{
+  "timestamp": "2026-04-21T01:40:40.1575885+08:00",
+  "device": {
+    "Serial": "emulator-5554",
+    "Model": "23116PN5BC",
+    "State": "online",
+    "ConnectionType": "usb"
+  },
+  "screenshot": {
+    "Width": 720,
+    "Height": 1280,
+    "screenshotPath": "C:\\Users\\Administrator\\Desktop\\autojs6-smoke-output\\windows-smoke-screenshot.png"
+  },
+  "uiDump": {
+    "xmlPath": "C:\\Users\\Administrator\\Desktop\\autojs6-smoke-output\\windows-smoke-ui.xml",
+    "nodeCount": 34
+  },
+  "selectedNode": {
+    "ClassName": "android.widget.ImageView",
+    "ResourceId": "com.tencent.mobileqq:id/a47",
+    "Text": null,
+    "ContentDesc": "\u8FD4\u56DE",
+    "BoundsRect": {}
+  },
+  "template": {
+    "templatePath": "C:\\Users\\Administrator\\Desktop\\autojs6-smoke-output\\windows-smoke-template.png",
+    "templateMetaPath": "C:\\Users\\Administrator\\Desktop\\autojs6-smoke-output\\windows-smoke-template.json",
+    "X": 0,
+    "Y": 61,
+    "Width": 79,
+    "Height": 79
+  },
+  "match": {
+    "X": 0,
+    "Y": 61,
+    "Width": 79,
+    "Height": 79,
+    "Confidence": 1,
+    "IsMatch": true,
+    "ElapsedMilliseconds": 2,
+    "ClickX": 39,
+    "ClickY": 100,
+    "Algorithm": "TM_CCOEFF_NORMED",
+    "Threshold": 0.95
+  },
+  "code": {
+    "imageValid": true,
+    "imageErrorCount": 0,
+    "widgetValid": true,
+    "widgetErrorCount": 0,
+    "imageCodePath": "C:\\Users\\Administrator\\Desktop\\autojs6-smoke-output\\windows-smoke-image.js",
+    "widgetCodePath": "C:\\Users\\Administrator\\Desktop\\autojs6-smoke-output\\windows-smoke-widget.js"
+  }
+}

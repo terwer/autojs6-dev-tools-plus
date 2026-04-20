@@ -169,7 +169,7 @@ public sealed class AdbService : IAdbService
         var height = checked((int)framebuffer.Header.Height);
         var rawData = framebuffer.Data ?? throw new InvalidOperationException("Framebuffer.Data 为空。");
         var bytesPerPixel = checked((int)Math.Max(1u, framebuffer.Header.Bpp / 8u));
-        var normalized = NormalizeFramebufferData(rawData, framebuffer.Header.Width, framebuffer.Header.Height, bytesPerPixel);
+        var normalized = NormalizeFramebufferData(rawData, framebuffer.Header.Width, framebuffer.Header.Height, bytesPerPixel, framebuffer.Header.Size);
         var rgbaBytes = ConvertToRgba32Bytes(normalized, width, height, bytesPerPixel, framebuffer.Header);
 
         using var image = Image.LoadPixelData<Rgba32>(rgbaBytes, width, height);
@@ -178,9 +178,16 @@ public sealed class AdbService : IAdbService
         return new AdbScreenshot(stream.ToArray(), width, height);
     }
 
-    private static byte[] NormalizeFramebufferData(byte[] data, uint width, uint height, int bytesPerPixel)
+    private static byte[] NormalizeFramebufferData(byte[] data, uint width, uint height, int bytesPerPixel, uint headerSize)
     {
         var expectedSize = checked((int)(width * height * (uint)bytesPerPixel));
+        if (headerSize > 0 && headerSize <= data.Length && headerSize != data.Length)
+        {
+            var truncated = new byte[headerSize];
+            Buffer.BlockCopy(data, 0, truncated, 0, checked((int)headerSize));
+            data = truncated;
+        }
+
         if (data.Length == expectedSize)
         {
             return data;

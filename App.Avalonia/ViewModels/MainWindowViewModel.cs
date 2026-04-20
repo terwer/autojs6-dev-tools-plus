@@ -110,6 +110,12 @@ public partial class MainWindowViewModel : ViewModelBase
     private string _widgetSelectionHint = "尚未选中控件。进入控件模式后，可在中央画布中点击控件边界框查看属性。";
 
     [ObservableProperty]
+    private string _selectorValidationReport = "尚未执行选择器验证。";
+
+    [ObservableProperty]
+    private string _alignmentValidationReport = "尚未执行坐标对齐验证。";
+
+    [ObservableProperty]
     private string _canvasResolutionText = "-";
 
     [ObservableProperty]

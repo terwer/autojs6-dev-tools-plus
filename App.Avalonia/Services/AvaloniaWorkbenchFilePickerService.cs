@@ -14,6 +14,17 @@ public sealed class AvaloniaWorkbenchFilePickerService : IWorkbenchFilePickerSer
 
     public async Task<string?> PickImageFileAsync(string title, CancellationToken cancellationToken = default)
     {
+        var files = await PickImageFilesInternalAsync(title, false, cancellationToken);
+        return files.FirstOrDefault();
+    }
+
+    public async Task<IReadOnlyList<string>> PickImageFilesAsync(string title, CancellationToken cancellationToken = default)
+    {
+        return await PickImageFilesInternalAsync(title, true, cancellationToken);
+    }
+
+    private async Task<IReadOnlyList<string>> PickImageFilesInternalAsync(string title, bool allowMultiple, CancellationToken cancellationToken)
+    {
         cancellationToken.ThrowIfCancellationRequested();
 
         var topLevel = _topLevelAccessor()
@@ -27,7 +38,7 @@ public sealed class AvaloniaWorkbenchFilePickerService : IWorkbenchFilePickerSer
         var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
             Title = title,
-            AllowMultiple = false,
+            AllowMultiple = allowMultiple,
             FileTypeFilter =
             [
                 new FilePickerFileType("图像文件")
@@ -37,12 +48,9 @@ public sealed class AvaloniaWorkbenchFilePickerService : IWorkbenchFilePickerSer
             ]
         });
 
-        var file = files.FirstOrDefault();
-        if (file is null)
-        {
-            return null;
-        }
-
-        return file.Path.IsAbsoluteUri ? file.Path.LocalPath : file.Path.ToString();
+        return files
+            .Select(file => file.Path.IsAbsoluteUri ? file.Path.LocalPath : file.Path.ToString())
+            .Where(path => !string.IsNullOrWhiteSpace(path))
+            .ToArray();
     }
 }
