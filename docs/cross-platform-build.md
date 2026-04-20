@@ -22,6 +22,9 @@ This repository uses code as the source of truth. When documentation conflicts w
 - Managed wrapper: `OpenCvSharp4`
 - Integration boundary: `Infrastructure`
 - Native runtime packaging is intentionally separated from the Core and App layers so the dependency direction remains `App -> Infrastructure -> Core`.
+- Windows currently pins `OpenCvSharp4.runtime.win` in `Infrastructure`.
+- macOS native runtime is intentionally **not** pinned in `*.csproj`; it must be provisioned outside the repo package graph until a verified version pair exists.
+- Linux keeps a reserved validation path via `scripts/linux/probe-opencv-native.sh`.
 
 ## GitHub Actions workflow
 

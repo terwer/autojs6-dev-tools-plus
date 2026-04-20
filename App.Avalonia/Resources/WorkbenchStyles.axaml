@@ -1,0 +1,172 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Styles.Resources>
+    <Color x:Key="AppBackgroundColor">#F6F7F9</Color>
+    <Color x:Key="SurfaceColor">#FFFFFFFF</Color>
+    <Color x:Key="StageColor">#D5D6D8</Color>
+    <Color x:Key="StageInnerColor">#40444D</Color>
+    <Color x:Key="PrimaryColor">#0A74D6</Color>
+    <Color x:Key="PrimaryColorDark">#075EAF</Color>
+    <Color x:Key="PrimaryColorSoft">#E7F2FF</Color>
+    <Color x:Key="BorderColor">#DCE1E8</Color>
+    <Color x:Key="BorderColorStrong">#C7D1DD</Color>
+    <Color x:Key="TextColor">#1F2329</Color>
+    <Color x:Key="TextMutedColor">#6F7785</Color>
+    <Color x:Key="TextSoftColor">#9AA3B2</Color>
+    <Color x:Key="SuccessColor">#36A163</Color>
+    <Color x:Key="WarningColor">#C58A18</Color>
+
+    <SolidColorBrush x:Key="AppBackgroundBrush" Color="{StaticResource AppBackgroundColor}"/>
+    <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceColor}"/>
+    <SolidColorBrush x:Key="StageBrush" Color="{StaticResource StageColor}"/>
+    <SolidColorBrush x:Key="StageInnerBrush" Color="{StaticResource StageInnerColor}"/>
+    <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource PrimaryColor}"/>
+    <SolidColorBrush x:Key="PrimaryBrushDark" Color="{StaticResource PrimaryColorDark}"/>
+    <SolidColorBrush x:Key="PrimarySoftBrush" Color="{StaticResource PrimaryColorSoft}"/>
+    <SolidColorBrush x:Key="BorderBrushNormal" Color="{StaticResource BorderColor}"/>
+    <SolidColorBrush x:Key="BorderBrushStrong" Color="{StaticResource BorderColorStrong}"/>
+    <SolidColorBrush x:Key="TextBrush" Color="{StaticResource TextColor}"/>
+    <SolidColorBrush x:Key="TextMutedBrush" Color="{StaticResource TextMutedColor}"/>
+    <SolidColorBrush x:Key="TextSoftBrush" Color="{StaticResource TextSoftColor}"/>
+    <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessColor}"/>
+    <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningColor}"/>
+  </Styles.Resources>
+
+  <Style Selector="Window.workbench-window">
+    <Setter Property="Background" Value="{DynamicResource AppBackgroundBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+    <Setter Property="FontSize" Value="14"/>
+    <Setter Property="FontFamily" Value="Microsoft YaHei UI, PingFang SC, Segoe UI, sans-serif"/>
+  </Style>
+
+  <Style Selector="Border.surface-card">
+    <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrushNormal}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="18"/>
+    <Setter Property="BoxShadow" Value="0 8 24 0 #10000000"/>
+  </Style>
+
+  <Style Selector="Border.section-card">
+    <Setter Property="Padding" Value="16"/>
+  </Style>
+
+  <Style Selector="Border.stage-shell">
+    <Setter Property="Background" Value="{DynamicResource StageBrush}"/>
+    <Setter Property="CornerRadius" Value="22"/>
+    <Setter Property="Padding" Value="14"/>
+  </Style>
+
+  <Style Selector="Border.stage-inner">
+    <Setter Property="Background" Value="{DynamicResource StageInnerBrush}"/>
+    <Setter Property="CornerRadius" Value="18"/>
+  </Style>
+
+  <Style Selector="Border.status-strip">
+    <Setter Property="Padding" Value="12,10"/>
+  </Style>
+
+  <Style Selector="Border.empty-hint-card">
+    <Setter Property="Background" Value="#FDFDFE"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrushNormal}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="18"/>
+    <Setter Property="Padding" Value="24"/>
+    <Setter Property="BoxShadow" Value="0 12 28 0 #12000000"/>
+  </Style>
+
+  <Style Selector="TextBlock.title-xl">
+    <Setter Property="FontSize" Value="18"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+  </Style>
+
+  <Style Selector="TextBlock.title-lg">
+    <Setter Property="FontSize" Value="15"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+  </Style>
+
+  <Style Selector="TextBlock.caption-muted">
+    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
+  </Style>
+
+  <Style Selector="TextBlock.caption-soft">
+    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextSoftBrush}"/>
+  </Style>
+
+  <Style Selector="Button.base-action">
+    <Setter Property="CornerRadius" Value="14"/>
+    <Setter Property="Padding" Value="16,10"/>
+    <Setter Property="FontSize" Value="14"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrushNormal}"/>
+    <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+  </Style>
+
+  <Style Selector="Button.base-action:pointerover">
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrushStrong}"/>
+  </Style>
+
+  <Style Selector="Button.primary-action">
+    <Setter Property="Background" Value="{DynamicResource PrimaryBrush}"/>
+    <Setter Property="Foreground" Value="White"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+  </Style>
+
+  <Style Selector="Button.primary-action:pointerover">
+    <Setter Property="Background" Value="{DynamicResource PrimaryBrushDark}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrushDark}"/>
+  </Style>
+
+  <Style Selector="Button.segmented-toggle">
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="BorderThickness" Value="0"/>
+    <Setter Property="CornerRadius" Value="14"/>
+    <Setter Property="Padding" Value="20,11"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+  </Style>
+
+  <Style Selector="Button.segmented-toggle.active">
+    <Setter Property="Background" Value="{DynamicResource PrimaryBrush}"/>
+    <Setter Property="Foreground" Value="White"/>
+  </Style>
+
+  <Style Selector="Button.device-item">
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrushNormal}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="16"/>
+    <Setter Property="Padding" Value="14"/>
+    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+  </Style>
+
+  <Style Selector="Button.device-item.active">
+    <Setter Property="Background" Value="{DynamicResource PrimarySoftBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+  </Style>
+
+  <Style Selector="TextBox.panel-input">
+    <Setter Property="CornerRadius" Value="12"/>
+    <Setter Property="Padding" Value="12,10"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrushNormal}"/>
+    <Setter Property="Background" Value="#FCFCFD"/>
+  </Style>
+
+  <Style Selector="CheckBox.inline-check">
+    <Setter Property="VerticalAlignment" Value="Center"/>
+  </Style>
+
+  <Style Selector="ScrollViewer.log-viewer">
+    <Setter Property="MaxHeight" Value="180"/>
+  </Style>
+
+  <Style Selector="Border.log-drawer">
+    <Setter Property="Padding" Value="12"/>
+  </Style>
+</Styles>

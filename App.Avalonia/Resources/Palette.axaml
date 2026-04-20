@@ -1,0 +1,32 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Color x:Key="AppBackgroundColor">#F6F7F9</Color>
+  <Color x:Key="SurfaceColor">#FFFFFFFF</Color>
+  <Color x:Key="StageColor">#D5D6D8</Color>
+  <Color x:Key="StageInnerColor">#40444D</Color>
+  <Color x:Key="PrimaryColor">#0A74D6</Color>
+  <Color x:Key="PrimaryColorDark">#075EAF</Color>
+  <Color x:Key="PrimaryColorSoft">#E7F2FF</Color>
+  <Color x:Key="BorderColor">#DCE1E8</Color>
+  <Color x:Key="BorderColorStrong">#C7D1DD</Color>
+  <Color x:Key="TextColor">#1F2329</Color>
+  <Color x:Key="TextMutedColor">#6F7785</Color>
+  <Color x:Key="TextSoftColor">#9AA3B2</Color>
+  <Color x:Key="SuccessColor">#36A163</Color>
+  <Color x:Key="WarningColor">#C58A18</Color>
+
+  <SolidColorBrush x:Key="AppBackgroundBrush" Color="{StaticResource AppBackgroundColor}"/>
+  <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceColor}"/>
+  <SolidColorBrush x:Key="StageBrush" Color="{StaticResource StageColor}"/>
+  <SolidColorBrush x:Key="StageInnerBrush" Color="{StaticResource StageInnerColor}"/>
+  <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource PrimaryColor}"/>
+  <SolidColorBrush x:Key="PrimaryBrushDark" Color="{StaticResource PrimaryColorDark}"/>
+  <SolidColorBrush x:Key="PrimarySoftBrush" Color="{StaticResource PrimaryColorSoft}"/>
+  <SolidColorBrush x:Key="BorderBrushNormal" Color="{StaticResource BorderColor}"/>
+  <SolidColorBrush x:Key="BorderBrushStrong" Color="{StaticResource BorderColorStrong}"/>
+  <SolidColorBrush x:Key="TextBrush" Color="{StaticResource TextColor}"/>
+  <SolidColorBrush x:Key="TextMutedBrush" Color="{StaticResource TextMutedColor}"/>
+  <SolidColorBrush x:Key="TextSoftBrush" Color="{StaticResource TextSoftColor}"/>
+  <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessColor}"/>
+  <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningColor}"/>
+</ResourceDictionary>

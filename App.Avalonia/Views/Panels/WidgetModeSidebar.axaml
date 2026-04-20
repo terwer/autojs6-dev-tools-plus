@@ -1,0 +1,61 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:App.Avalonia.ViewModels"
+             x:Class="App.Avalonia.Views.Panels.WidgetModeSidebar"
+             x:DataType="vm:MainWindowViewModel">
+  <StackPanel Spacing="12">
+    <Border Classes="surface-card section-card">
+      <StackPanel Spacing="12">
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+          <TextBlock Classes="title-lg" VerticalAlignment="Center" Text="节点树"/>
+          <Button Grid.Column="1" Classes.base-action="True" Classes.primary-action="True" Content="拉取 UI 树" IsEnabled="False"/>
+        </Grid>
+
+        <TextBox Classes="panel-input" PlaceholderText="搜索 class / text / desc / resource-id" Text="{Binding WidgetTreeSearchText}"/>
+        <TextBlock Classes="caption-muted" Text="显示 0 个业务节点"/>
+
+        <Border Background="{DynamicResource AppBackgroundBrush}" CornerRadius="14" Padding="12" MinHeight="220">
+          <Grid>
+            <TreeView ItemsSource="{Binding WidgetNodes}" IsVisible="{Binding HasWidgetNodes}">
+              <TreeView.ItemTemplate>
+                <TreeDataTemplate ItemsSource="{Binding Children}" x:DataType="vm:WidgetTreeNodeViewModel">
+                  <StackPanel Spacing="2">
+                    <TextBlock Text="{Binding Title}"/>
+                    <TextBlock Classes="caption-soft" Text="{Binding Subtitle}"/>
+                  </StackPanel>
+                </TreeDataTemplate>
+              </TreeView.ItemTemplate>
+            </TreeView>
+            <TextBlock IsVisible="{Binding IsWidgetTreeEmpty}" Text="尚未加载 UI 树。进入控件模式后，点击“拉取 UI 树”即可在这里查看节点结构。" TextWrapping="Wrap"/>
+          </Grid>
+        </Border>
+      </StackPanel>
+    </Border>
+
+    <Border Classes="surface-card section-card">
+      <StackPanel Spacing="12">
+        <TextBlock Classes="title-lg" Text="属性与代码动作"/>
+
+        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="10">
+          <TextBlock Grid.Row="0" Grid.Column="0" Text="类名"/>
+          <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding PropertyClassName}"/>
+          <TextBlock Grid.Row="1" Grid.Column="0" Text="文本"/>
+          <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding PropertyText}"/>
+          <TextBlock Grid.Row="2" Grid.Column="0" Text="ID"/>
+          <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding PropertyId}"/>
+        </Grid>
+
+        <Border Background="{DynamicResource AppBackgroundBrush}" CornerRadius="14" Padding="12">
+          <TextBlock Text="{Binding WidgetSelectionHint}" TextWrapping="Wrap"/>
+        </Border>
+
+        <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
+          <Button Grid.Column="0" Classes.base-action="True" Content="复制坐标" IsEnabled="False"/>
+          <Button Grid.Column="1" Classes.base-action="True" Content="复制 UiSelector" IsEnabled="False"/>
+          <Button Grid.Column="2" Classes.base-action="True" Classes.primary-action="True" Content="查看代码" IsEnabled="False"/>
+        </Grid>
+      </StackPanel>
+    </Border>
+  </StackPanel>
+</UserControl>
+
