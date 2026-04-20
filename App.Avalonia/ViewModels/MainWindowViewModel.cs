@@ -280,6 +280,11 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
+    partial void OnWidgetTreeSearchTextChanged(string value)
+    {
+        _ = RebuildFlatWidgetTreeAsync(value);
+    }
+
     [RelayCommand]
     private void SwitchToImageMode()
     {

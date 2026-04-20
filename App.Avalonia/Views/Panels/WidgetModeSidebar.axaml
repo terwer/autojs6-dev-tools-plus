@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:App.Avalonia.ViewModels"
              x:Class="App.Avalonia.Views.Panels.WidgetModeSidebar"
+             x:Name="WidgetSidebarRoot"
              x:DataType="vm:MainWindowViewModel">
   <StackPanel Spacing="12">
     <Border Classes="surface-card section-card">
@@ -16,16 +17,35 @@
 
         <Border Background="{DynamicResource AppBackgroundBrush}" CornerRadius="14" Padding="12" MinHeight="220">
           <Grid>
-            <TreeView ItemsSource="{Binding WidgetNodes}" SelectedItem="{Binding SelectedWidgetTreeNode, Mode=TwoWay}" IsVisible="{Binding HasWidgetNodes}">
-              <TreeView.ItemTemplate>
-                <TreeDataTemplate ItemsSource="{Binding Children}" x:DataType="vm:WidgetTreeNodeViewModel">
-                  <StackPanel Spacing="2">
-                    <TextBlock Text="{Binding Title}"/>
-                    <TextBlock Classes="caption-soft" Text="{Binding Subtitle}"/>
-                  </StackPanel>
-                </TreeDataTemplate>
-              </TreeView.ItemTemplate>
-            </TreeView>
+            <ListBox ItemsSource="{Binding WidgetNodes}"
+                     SelectedItem="{Binding SelectedWidgetTreeNode, Mode=TwoWay}"
+                     IsVisible="{Binding HasWidgetNodes}">
+              <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <VirtualizingStackPanel/>
+                </ItemsPanelTemplate>
+              </ListBox.ItemsPanel>
+              <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:WidgetTreeNodeViewModel">
+                  <Grid Margin="{Binding Indent}" ColumnDefinitions="Auto,*" ColumnSpacing="6">
+                    <Button Grid.Column="0"
+                            Classes="base-action"
+                            Padding="6,0"
+                            MinWidth="24"
+                            Content="{Binding ExpandGlyph}"
+                            IsVisible="{Binding HasChildren}"
+                            Command="{Binding #WidgetSidebarRoot.DataContext.ToggleWidgetNodeExpansionCommand}"
+                            CommandParameter="{Binding}"/>
+                    <Border Grid.Column="1" Padding="2,4">
+                      <StackPanel Spacing="1">
+                        <TextBlock Text="{Binding Title}"/>
+                        <TextBlock Classes="caption-soft" Text="{Binding Subtitle}"/>
+                      </StackPanel>
+                    </Border>
+                  </Grid>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
             <TextBlock IsVisible="{Binding IsWidgetTreeEmpty}" Text="尚未加载 UI 树。进入控件模式后，点击“拉取 UI 树”即可在这里查看节点结构。" TextWrapping="Wrap"/>
           </Grid>
         </Border>

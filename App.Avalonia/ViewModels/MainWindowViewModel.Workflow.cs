@@ -503,38 +503,40 @@ public partial class MainWindowViewModel
         RefreshCanvasOverlays();
     }
 
-    private void ApplyWidgetTreeFilter(string searchText)
+    private async Task RebuildFlatWidgetTreeAsync(string searchText)
     {
-        if (_widgetRoot is null)
+        if (_widgetRoot is null || _uiDumpParser is null)
         {
             WidgetNodes.Clear();
             _widgetOverlays.Clear();
+            WidgetTreeSummaryText = "显示 0 个业务节点";
             RefreshCanvasOverlays();
+            OnPropertyChanged(nameof(HasWidgetNodes));
+            OnPropertyChanged(nameof(IsWidgetTreeEmpty));
             return;
         }
 
-        WidgetNodes.Clear();
-        var nodes = _uiDumpParser!.FilterNodes(_widgetRoot);
-        var filtered = string.IsNullOrWhiteSpace(searchText)
-            ? nodes
-            : nodes.Where(node => MatchesSearch(node, searchText)).ToArray();
+        var result = await Task.Run(() => BuildFlatWidgetTreeResult(_widgetRoot, searchText));
 
-        foreach (var child in _widgetRoot.Children)
+        WidgetNodes.Clear();
+        foreach (var item in result.FlatItems)
         {
-            var treeNode = BuildTreeNode(child, searchText);
-            if (treeNode is not null)
-            {
-                WidgetNodes.Add(treeNode);
-            }
+            WidgetNodes.Add(item);
         }
 
         _widgetOverlays.Clear();
-        foreach (var node in filtered.Where(node => node.BoundsRect.Width > 0 && node.BoundsRect.Height > 0))
+        foreach (var node in result.FilteredBusinessNodes.Where(node => node.BoundsRect.Width > 0 && node.BoundsRect.Height > 0))
         {
             _widgetOverlays.Add(new CanvasOverlayRect(new global::Avalonia.Rect(node.BoundsRect.X, node.BoundsRect.Y, node.BoundsRect.Width, node.BoundsRect.Height), GetWidgetColor(node), 1.6));
         }
 
-        WidgetTreeSummaryText = $"显示 {filtered.Count} 个业务节点（原始 {nodes.Count}）";
+        WidgetTreeSummaryText = $"显示 {result.FilteredBusinessNodes.Count} 个业务节点（原始 {result.TotalBusinessNodeCount}）";
+
+        if (SelectedWidgetTreeNode is not null)
+        {
+            SelectedWidgetTreeNode = WidgetNodes.FirstOrDefault(item => ReferenceEquals(item.Node, SelectedWidgetTreeNode.Node));
+        }
+
         RefreshCanvasOverlays();
         OnPropertyChanged(nameof(HasWidgetNodes));
         OnPropertyChanged(nameof(IsWidgetTreeEmpty));
@@ -596,33 +598,111 @@ public partial class MainWindowViewModel
         RefreshCanvasOverlays();
     }
 
-    private WidgetTreeNodeViewModel? BuildTreeNode(WidgetNode node, string searchText)
+    [RelayCommand]
+    private async Task ToggleWidgetNodeExpansionAsync(WidgetTreeNodeViewModel? node)
     {
-        var childNodes = node.Children
-            .Select(child => BuildTreeNode(child, searchText))
-            .Where(child => child is not null)
-            .Cast<WidgetTreeNodeViewModel>()
-            .ToArray();
-
-        var matches = string.IsNullOrWhiteSpace(searchText) || MatchesSearch(node, searchText);
-        if (!matches && childNodes.Length == 0)
+        if (node is null || !node.HasChildren || _widgetRoot is null)
         {
-            return null;
+            return;
         }
 
-        var title = BuildNodeTitle(node);
-        var subtitle = string.IsNullOrWhiteSpace(node.ResourceId) ? node.ClassName : node.ResourceId;
-        var viewModel = new WidgetTreeNodeViewModel(node, title, subtitle)
+        node.IsExpanded = !node.IsExpanded;
+        if (node.IsExpanded)
         {
-            IsExpanded = childNodes.Length <= 6
+            _expandedWidgetNodes.Add(node.Node);
+        }
+        else
+        {
+            _expandedWidgetNodes.Remove(node.Node);
+        }
+
+        await RebuildFlatWidgetTreeAsync(WidgetTreeSearchText);
+    }
+
+    private FlatWidgetTreeResult BuildFlatWidgetTreeResult(WidgetNode root, string searchText)
+    {
+        var hasFilter = !string.IsNullOrWhiteSpace(searchText);
+        var allBusinessNodes = _uiDumpParser!.FilterNodes(root);
+        var filteredBusinessNodes = hasFilter
+            ? allBusinessNodes.Where(node => MatchesSearch(node, searchText)).ToArray()
+            : allBusinessNodes;
+
+        var flatItems = new List<WidgetTreeNodeViewModel>();
+        foreach (var child in root.Children)
+        {
+            BuildFlatTreeRecursive(child, 0, searchText, hasFilter, flatItems);
+        }
+
+        return new FlatWidgetTreeResult(flatItems, filteredBusinessNodes, allBusinessNodes.Count);
+    }
+
+    private bool BuildFlatTreeRecursive(
+        WidgetNode node,
+        int depth,
+        string searchText,
+        bool hasFilter,
+        ICollection<WidgetTreeNodeViewModel> output)
+    {
+        var childBuffer = new List<WidgetTreeNodeViewModel>();
+        var descendantMatched = false;
+        foreach (var child in node.Children)
+        {
+            if (BuildFlatTreeRecursive(child, depth + 1, searchText, hasFilter, childBuffer))
+            {
+                descendantMatched = true;
+            }
+        }
+
+        var selfMatches = !hasFilter || MatchesSearch(node, searchText);
+        var include = !hasFilter || selfMatches || descendantMatched;
+        if (!include)
+        {
+            return false;
+        }
+
+        var viewModel = new WidgetTreeNodeViewModel(
+            node,
+            BuildNodeTitle(node),
+            string.IsNullOrWhiteSpace(node.ResourceId) ? node.ClassName : node.ResourceId,
+            depth)
+        {
+            IsExpanded = hasFilter ? (descendantMatched || selfMatches) : _expandedWidgetNodes.Contains(node)
         };
 
-        foreach (var child in childNodes)
+        output.Add(viewModel);
+
+        if (!hasFilter)
         {
-            viewModel.Children.Add(child);
+            if (viewModel.IsExpanded)
+            {
+                foreach (var child in childBuffer)
+                {
+                    output.Add(child);
+                }
+            }
+        }
+        else
+        {
+            foreach (var child in childBuffer)
+            {
+                output.Add(child);
+            }
         }
 
-        return viewModel;
+        return true;
+    }
+
+    private void SeedExpandedNodes(WidgetNode node, int maxDepthInclusive)
+    {
+        if (node.Depth <= maxDepthInclusive)
+        {
+            _expandedWidgetNodes.Add(node);
+        }
+
+        foreach (var child in node.Children)
+        {
+            SeedExpandedNodes(child, maxDepthInclusive);
+        }
     }
 
     private static string BuildNodeTitle(WidgetNode node)
@@ -749,5 +829,10 @@ public partial class MainWindowViewModel
     {
         AddLog(e.Category, e.ElapsedMilliseconds is null ? e.Message : $"{e.Message} ({e.ElapsedMilliseconds} ms)");
     }
+
+    private sealed record FlatWidgetTreeResult(
+        IReadOnlyList<WidgetTreeNodeViewModel> FlatItems,
+        IReadOnlyList<WidgetNode> FilteredBusinessNodes,
+        int TotalBusinessNodeCount);
 }
 
