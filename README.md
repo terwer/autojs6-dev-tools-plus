@@ -103,7 +103,7 @@ dotnet build App.Avalonia/App.Avalonia.csproj
 dotnet run --project App.Avalonia/App.Avalonia.csproj
 ```
 
-Or open `autojs6-dev-tools-plus.slnx` in your IDE and run the `App.Avalonia` project.
+Or open `autojs6-dev-tools-plus.sln` in Rider/Visual Studio and run the `App.Avalonia` project.
 
 ---
 
@@ -202,6 +202,7 @@ autojs6-dev-tools-plus/
 │   ├── Imaging/               # Image processing wrappers
 │   └── Platform/              # Clipboard, dialogs, file services, etc.
 ├── tests/                     # Unit tests
+│   └── Core.Tests/            # xUnit tests for the Core layer
 ├── docs/images/               # README screenshots
 ├── openspec/                  # OpenSpec change proposals
 ├── AGENTS.md                  # Core design principles (AI agent context)
@@ -236,6 +237,16 @@ App.Avalonia → Infrastructure → Core
 - Background operations with `CancellationToken` support
 
 ---
+
+## 🔁 Build Matrix
+
+- **Primary delivery targets**: Windows `win-x64`, macOS `osx-x64`
+- **Reserved build entry**: Linux `linux-x64`
+- **RID selection lives in GitHub Actions publish steps, not in the local project file**
+- **CI workflow**: `.github/workflows/build.yml`
+- **SDK pin**: `global.json` -> `.NET SDK 8.0.420`
+
+See `docs/cross-platform-build.md` for the current build baseline.
 
 ## 🛠️ Key Technologies
 

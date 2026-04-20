@@ -1,0 +1,58 @@
+name: build
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-test-publish:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            rid: win-x64
+          - os: macos-13
+            rid: osx-x64
+          - os: ubuntu-22.04
+            rid: linux-x64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore autojs6-dev-tools-plus.sln
+
+      - name: Build
+        run: dotnet build autojs6-dev-tools-plus.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test tests/Core.Tests/Core.Tests.csproj --configuration Release --no-build --logger trx
+
+      - name: Publish App.Avalonia
+        run: >-
+          dotnet publish App.Avalonia/App.Avalonia.csproj
+          --configuration Release
+          --runtime ${{ matrix.rid }}
+          --no-restore
+          --self-contained false
+          -p:PublishSingleFile=false
+          -o artifacts/${{ matrix.rid }}
+
+      - name: Upload published artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-avalonia-${{ matrix.rid }}
+          path: artifacts/${{ matrix.rid }}

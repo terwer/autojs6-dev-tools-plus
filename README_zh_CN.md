@@ -103,7 +103,7 @@ dotnet build App.Avalonia/App.Avalonia.csproj
 dotnet run --project App.Avalonia/App.Avalonia.csproj
 ```
 
-也可以直接在 IDE 中打开 `autojs6-dev-tools-plus.slnx`，运行 `App.Avalonia` 项目。
+也可以直接在 Rider / Visual Studio 中打开 `autojs6-dev-tools-plus.sln`，运行 `App.Avalonia` 项目。
 
 ---
 
@@ -202,6 +202,7 @@ autojs6-dev-tools-plus/
 │   ├── Imaging/               # 图像处理封装
 │   └── Platform/              # 剪贴板、对话框、文件服务等
 ├── tests/                     # 单元测试
+│   └── Core.Tests/            # Core 层 xUnit 测试
 ├── docs/images/               # README 截图
 ├── openspec/                  # OpenSpec 变更提案
 ├── AGENTS.md                  # 核心设计原则（AI agent 上下文）
@@ -236,6 +237,16 @@ App.Avalonia → Infrastructure → Core
 - 后台操作支持 `CancellationToken`
 
 ---
+
+## 🔁 构建矩阵
+
+- **首发交付目标**：Windows `win-x64`、macOS `osx-x64`
+- **保留构建入口**：Linux `linux-x64`
+- **RID 选择放在 GitHub Actions 的 publish 步骤，不放在本地项目文件里**
+- **CI 工作流**：`.github/workflows/build.yml`
+- **SDK 固定版本**：`global.json` -> `.NET SDK 8.0.420`
+
+当前构建基线见 `docs/cross-platform-build.md`。
 
 ## 🛠️ 关键技术
 

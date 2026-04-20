@@ -1,18 +1,18 @@
 ## 1. 项目初始化与架构落盘
 
-- [ ] 1.1 创建 `autojs6-dev-tools-plus` 解决方案与基础目录（`App.Avalonia` / `Core` / `Infrastructure` / `tests`）
-- [ ] 1.2 配置项目依赖关系，确保保持 `App → Infrastructure → Core ← Infrastructure`
-- [ ] 1.3 添加 Avalonia、MVVM、ImageSharp、ADB、跨平台 OpenCV 依赖并验证可还原
-- [ ] 1.4 将平台相关能力抽象为接口（窗口、剪贴板、文件对话框、快捷键、消息提示）
-- [ ] 1.5 建立 Windows/macOS 首版构建配置，并为 Linux 保留构建入口与依赖说明
+- [x] 1.1 创建 `autojs6-dev-tools-plus` 解决方案与基础目录（`App.Avalonia` / `Core` / `Infrastructure` / `tests`）
+- [x] 1.2 配置项目依赖关系，确保保持 `App → Infrastructure → Core ← Infrastructure`
+- [x] 1.3 添加 Avalonia、MVVM、ImageSharp、ADB、跨平台 OpenCV 依赖并验证可还原
+- [x] 1.4 将平台相关能力抽象为接口（窗口、剪贴板、文件对话框、快捷键、消息提示）
+- [x] 1.5 建立 Windows/macOS 首版构建配置，并为 Linux 保留构建入口与依赖说明
 
 ## 2. Core 层跨平台纯化
 
-- [ ] 2.1 定义设备、裁剪区域、匹配结果、控件节点、代码生成选项等核心模型
-- [ ] 2.2 实现 UI dump 解析、布局容器过滤、bounds 解析与 selector 生成逻辑
-- [ ] 2.3 实现 AutoJS6 代码生成器，覆盖图像模式与控件模式双路径
-- [ ] 2.4 实现生成代码约束校验（Rhino、OOM 预防、region 优先、路径正斜杠）
-- [ ] 2.5 为 Core 层补充单元测试，验证坐标、过滤、代码生成和选择器规则
+- [x] 2.1 定义设备、裁剪区域、匹配结果、控件节点、代码生成选项等核心模型
+- [x] 2.2 实现 UI dump 解析、布局容器过滤、bounds 解析与 selector 生成逻辑
+- [x] 2.3 实现 AutoJS6 代码生成器，覆盖图像模式与控件模式双路径
+- [x] 2.4 实现生成代码约束校验（Rhino、OOM 预防、region 优先、路径正斜杠）
+- [x] 2.5 为 Core 层补充单元测试，验证坐标、过滤、代码生成和选择器规则
 
 ## 3. Infrastructure 层能力实现
 
