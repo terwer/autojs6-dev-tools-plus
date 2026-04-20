@@ -29,6 +29,7 @@ public partial class MainWindowViewModel
     private readonly List<CanvasOverlayRect> _matchOverlays = [];
     private readonly HashSet<WidgetNode> _expandedWidgetNodes = [];
     private readonly List<MatchResult> _cachedMatchCandidates = [];
+    private IReadOnlyList<WidgetNode> _currentFilteredWidgetNodes = Array.Empty<WidgetNode>();
     private byte[]? _currentScreenshotBytes;
     private byte[]? _currentTemplateBytes;
     private string? _currentScreenshotPath;
@@ -65,6 +66,7 @@ public partial class MainWindowViewModel
     }
 
     public event EventHandler<string>? CodePreviewRequested;
+    public event EventHandler<global::Avalonia.Rect>? WidgetCanvasFocusRequested;
 
     [ObservableProperty]
     private WidgetTreeNodeViewModel? _selectedWidgetTreeNode;
@@ -96,6 +98,8 @@ public partial class MainWindowViewModel
 
     public bool CanCopySelectedWidgetCoordinates => SelectedWidgetTreeNode is not null;
 
+    public bool CanCopySelectedWidgetXPath => SelectedWidgetTreeNode is not null;
+
     public bool CanCopySelectedWidgetSelector => SelectedWidgetTreeNode is not null;
 
     private void OnWorkflowPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -106,6 +110,13 @@ public partial class MainWindowViewModel
             case nameof(IsWidgetBoundsVisible):
                 OnPropertyChanged(nameof(CanGenerateCode));
                 RefreshCanvasOverlays();
+                break;
+            case nameof(ShowTextWidgets):
+            case nameof(ShowButtonWidgets):
+            case nameof(ShowImageWidgets):
+            case nameof(ShowOtherWidgets):
+            case nameof(WidgetOverlayOpacity):
+                RebuildWidgetOverlaysFromCurrentFilteredNodes();
                 break;
             case nameof(SelectedDevice):
                 OnPropertyChanged(nameof(CanCaptureScreenshot));
@@ -376,6 +387,24 @@ public partial class MainWindowViewModel
     }
 
     [RelayCommand]
+    private async Task CopySelectedWidgetXPathAsync()
+    {
+        if (SelectedWidgetTreeNode is null || _widgetRoot is null)
+        {
+            return;
+        }
+
+        var xpath = BuildXPath(_widgetRoot, SelectedWidgetTreeNode.Node);
+        if (string.IsNullOrWhiteSpace(xpath))
+        {
+            return;
+        }
+
+        await _clipboardService!.SetTextAsync(xpath);
+        FooterStatusText = "已复制 XPath";
+    }
+
+    [RelayCommand]
     private async Task OpenCodePreviewAsync()
     {
         var code = await GenerateCodePreviewInternalAsync();
@@ -485,6 +514,9 @@ public partial class MainWindowViewModel
             PropertyClassName = "-";
             PropertyText = "-";
             PropertyId = "-";
+            PropertyBounds = "-";
+            PropertyPackage = "-";
+            PropertyClickable = "-";
             WidgetSelectionHint = "尚未选中控件。进入控件模式后，可在中央画布中点击控件边界框查看属性。";
         }
         else
@@ -493,14 +525,24 @@ public partial class MainWindowViewModel
             PropertyClassName = string.IsNullOrWhiteSpace(node.ClassName) ? "-" : node.ClassName;
             PropertyText = string.IsNullOrWhiteSpace(node.Text) ? "-" : node.Text;
             PropertyId = string.IsNullOrWhiteSpace(node.ResourceId) ? "-" : node.ResourceId;
+            PropertyBounds = $"[{node.BoundsRect.X}, {node.BoundsRect.Y}, {node.BoundsRect.Width}, {node.BoundsRect.Height}]";
+            PropertyPackage = string.IsNullOrWhiteSpace(node.Package) ? "-" : node.Package;
+            PropertyClickable = node.Clickable ? "true" : "false";
             WidgetSelectionHint = _uiDumpParser!.GenerateUiSelector(node);
             OperationInputText = $"[{node.BoundsRect.X}, {node.BoundsRect.Y}, {node.BoundsRect.Width}, {node.BoundsRect.Height}]";
         }
 
         OnPropertyChanged(nameof(CanGenerateCode));
         OnPropertyChanged(nameof(CanCopySelectedWidgetCoordinates));
+        OnPropertyChanged(nameof(CanCopySelectedWidgetXPath));
         OnPropertyChanged(nameof(CanCopySelectedWidgetSelector));
         RefreshCanvasOverlays();
+
+        if (CurrentMode == WorkbenchMode.Widget && SelectedWidgetTreeNode is not null)
+        {
+            var rect = SelectedWidgetTreeNode.Node.BoundsRect;
+            WidgetCanvasFocusRequested?.Invoke(this, new global::Avalonia.Rect(rect.X, rect.Y, rect.Width, rect.Height));
+        }
     }
 
     private async Task RebuildFlatWidgetTreeAsync(string searchText)
@@ -524,11 +566,8 @@ public partial class MainWindowViewModel
             WidgetNodes.Add(item);
         }
 
-        _widgetOverlays.Clear();
-        foreach (var node in result.FilteredBusinessNodes.Where(node => node.BoundsRect.Width > 0 && node.BoundsRect.Height > 0))
-        {
-            _widgetOverlays.Add(new CanvasOverlayRect(new global::Avalonia.Rect(node.BoundsRect.X, node.BoundsRect.Y, node.BoundsRect.Width, node.BoundsRect.Height), GetWidgetColor(node), 1.6));
-        }
+        _currentFilteredWidgetNodes = result.FilteredBusinessNodes;
+        RebuildWidgetOverlaysFromCurrentFilteredNodes();
 
         WidgetTreeSummaryText = $"显示 {result.FilteredBusinessNodes.Count} 个业务节点（原始 {result.TotalBusinessNodeCount}）";
 
@@ -537,7 +576,6 @@ public partial class MainWindowViewModel
             SelectedWidgetTreeNode = WidgetNodes.FirstOrDefault(item => ReferenceEquals(item.Node, SelectedWidgetTreeNode.Node));
         }
 
-        RefreshCanvasOverlays();
         OnPropertyChanged(nameof(HasWidgetNodes));
         OnPropertyChanged(nameof(IsWidgetTreeEmpty));
     }
@@ -720,6 +758,59 @@ public partial class MainWindowViewModel
         return GetSimpleClassName(node.ClassName);
     }
 
+    private static string BuildXPath(WidgetNode root, WidgetNode target)
+    {
+        var segments = new List<string>();
+        return TryBuildXPathRecursive(null, root, target, segments)
+            ? "/" + string.Join('/', segments)
+            : string.Empty;
+    }
+
+    private static bool TryBuildXPathRecursive(WidgetNode? parent, WidgetNode current, WidgetNode target, IList<string> segments)
+    {
+        segments.Add(BuildXPathSegment(parent, current));
+        if (ReferenceEquals(current, target))
+        {
+            return true;
+        }
+
+        foreach (var child in current.Children)
+        {
+            if (TryBuildXPathRecursive(current, child, target, segments))
+            {
+                return true;
+            }
+        }
+
+        segments.RemoveAt(segments.Count - 1);
+        return false;
+    }
+
+    private static string BuildXPathSegment(WidgetNode? parent, WidgetNode current)
+    {
+        var className = string.IsNullOrWhiteSpace(current.ClassName) ? "node" : current.ClassName;
+        if (parent is null)
+        {
+            return className;
+        }
+
+        var siblingIndex = 1;
+        foreach (var sibling in parent.Children)
+        {
+            if (ReferenceEquals(sibling, current))
+            {
+                break;
+            }
+
+            if (string.Equals(sibling.ClassName, current.ClassName, StringComparison.Ordinal))
+            {
+                siblingIndex++;
+            }
+        }
+
+        return $"{className}[{siblingIndex}]";
+    }
+
     private static string GetSimpleClassName(string? className)
     {
         if (string.IsNullOrWhiteSpace(className))
@@ -758,6 +849,69 @@ public partial class MainWindowViewModel
         }
 
         return Color.Parse("#4C7DFF");
+    }
+
+    private void RebuildWidgetOverlaysFromCurrentFilteredNodes()
+    {
+        _widgetOverlays.Clear();
+
+        foreach (var node in _currentFilteredWidgetNodes.Where(node => node.BoundsRect.Width > 0 && node.BoundsRect.Height > 0))
+        {
+            var category = GetWidgetCategory(node);
+            if (!IsWidgetCategoryVisible(category))
+            {
+                continue;
+            }
+
+            var baseColor = GetWidgetColor(node);
+            _widgetOverlays.Add(new CanvasOverlayRect(
+                new global::Avalonia.Rect(node.BoundsRect.X, node.BoundsRect.Y, node.BoundsRect.Width, node.BoundsRect.Height),
+                ApplyOpacity(baseColor, WidgetOverlayOpacity),
+                1.6,
+                null,
+                null,
+                ApplyOpacity(baseColor, Math.Clamp(WidgetOverlayOpacity * 0.22d, 0.06d, 0.35d))));
+        }
+
+        RefreshCanvasOverlays();
+    }
+
+    private WidgetVisualCategory GetWidgetCategory(WidgetNode node)
+    {
+        var className = node.ClassName ?? string.Empty;
+        if (className.Contains("Text", StringComparison.OrdinalIgnoreCase))
+        {
+            return WidgetVisualCategory.Text;
+        }
+
+        if (className.Contains("Button", StringComparison.OrdinalIgnoreCase) || node.Clickable)
+        {
+            return WidgetVisualCategory.Button;
+        }
+
+        if (className.Contains("Image", StringComparison.OrdinalIgnoreCase))
+        {
+            return WidgetVisualCategory.Image;
+        }
+
+        return WidgetVisualCategory.Other;
+    }
+
+    private bool IsWidgetCategoryVisible(WidgetVisualCategory category)
+    {
+        return category switch
+        {
+            WidgetVisualCategory.Text => ShowTextWidgets,
+            WidgetVisualCategory.Button => ShowButtonWidgets,
+            WidgetVisualCategory.Image => ShowImageWidgets,
+            _ => ShowOtherWidgets
+        };
+    }
+
+    private static Color ApplyOpacity(Color color, double opacity)
+    {
+        var alpha = (byte)Math.Clamp(Math.Round(opacity * 255d), 0d, 255d);
+        return Color.FromArgb(alpha, color.R, color.G, color.B);
     }
 
     private void RefreshCanvasOverlays()
@@ -830,9 +984,56 @@ public partial class MainWindowViewModel
         AddLog(e.Category, e.ElapsedMilliseconds is null ? e.Message : $"{e.Message} ({e.ElapsedMilliseconds} ms)");
     }
 
+    public async Task SelectWidgetNodeByCoordinateAsync(int pixelX, int pixelY)
+    {
+        if (_widgetRoot is null || _uiDumpParser is null)
+        {
+            return;
+        }
+
+        var node = _uiDumpParser.FindNodeByCoordinate(_widgetRoot, pixelX, pixelY);
+        if (node is null)
+        {
+            return;
+        }
+
+        ExpandAncestors(_widgetRoot, node);
+        await RebuildFlatWidgetTreeAsync(WidgetTreeSearchText);
+        SelectedWidgetTreeNode = WidgetNodes.FirstOrDefault(item => ReferenceEquals(item.Node, node));
+    }
+
+    private bool ExpandAncestors(WidgetNode current, WidgetNode target)
+    {
+        if (ReferenceEquals(current, target))
+        {
+            return true;
+        }
+
+        foreach (var child in current.Children)
+        {
+            if (!ExpandAncestors(child, target))
+            {
+                continue;
+            }
+
+            _expandedWidgetNodes.Add(current);
+            return true;
+        }
+
+        return false;
+    }
+
     private sealed record FlatWidgetTreeResult(
         IReadOnlyList<WidgetTreeNodeViewModel> FlatItems,
         IReadOnlyList<WidgetNode> FilteredBusinessNodes,
         int TotalBusinessNodeCount);
+
+    private enum WidgetVisualCategory
+    {
+        Text = 0,
+        Button = 1,
+        Image = 2,
+        Other = 3
+    }
 }
 

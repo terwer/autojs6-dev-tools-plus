@@ -25,3 +25,10 @@ public sealed class CanvasPointerInfoChangedEventArgs : EventArgs
 
     public bool IsCrosshairVisible { get; init; }
 }
+
+public sealed class CanvasOverlayClickEventArgs : EventArgs
+{
+    public required int PixelX { get; init; }
+
+    public required int PixelY { get; init; }
+}

@@ -122,6 +122,13 @@
               <Button Classes.base-action="True" Content="拉取 UI 树" Command="{Binding PullUiTreeCommand}" IsEnabled="{Binding CanPullUiTree}"/>
               <Button x:Name="RotateWidgetButton" Classes.base-action="True" Content="旋转 90°" IsEnabled="{Binding HasCanvasContent}"/>
               <CheckBox Classes="inline-check" VerticalAlignment="Center" IsChecked="{Binding IsWidgetBoundsVisible}" Content="显示控件框"/>
+              <TextBlock VerticalAlignment="Center" Text="透明度"/>
+              <Slider Width="110" Minimum="0.1" Maximum="1.0" Value="{Binding WidgetOverlayOpacity}"/>
+              <TextBlock VerticalAlignment="Center" Text="{Binding WidgetOverlayOpacity, StringFormat={}{0:P0}}"/>
+              <CheckBox Classes="inline-check" VerticalAlignment="Center" IsChecked="{Binding ShowTextWidgets}" Content="文本"/>
+              <CheckBox Classes="inline-check" VerticalAlignment="Center" IsChecked="{Binding ShowButtonWidgets}" Content="按钮"/>
+              <CheckBox Classes="inline-check" VerticalAlignment="Center" IsChecked="{Binding ShowImageWidgets}" Content="图片"/>
+              <CheckBox Classes="inline-check" VerticalAlignment="Center" IsChecked="{Binding ShowOtherWidgets}" Content="其他"/>
             </StackPanel>
           </Grid>
         </Border>

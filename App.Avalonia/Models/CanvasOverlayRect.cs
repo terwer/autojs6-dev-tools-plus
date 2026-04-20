@@ -8,4 +8,5 @@ public sealed record CanvasOverlayRect(
     Color StrokeColor,
     double StrokeThickness = 1.5,
     string? Label = null,
-    Color? LabelColor = null);
+    Color? LabelColor = null,
+    Color? FillColor = null);

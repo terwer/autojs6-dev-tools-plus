@@ -31,6 +31,7 @@ public partial class MainWindow : Window
         RotateWidgetButton.Click += OnRotateButtonClick;
         WorkbenchCanvas.ViewportChanged += OnCanvasViewportChanged;
         WorkbenchCanvas.PointerInfoChanged += OnCanvasPointerInfoChanged;
+        WorkbenchCanvas.OverlayClicked += OnCanvasOverlayClicked;
     }
 
     protected override void OnDataContextChanged(EventArgs e)
@@ -44,6 +45,7 @@ public partial class MainWindow : Window
         if (_viewModel is not null)
         {
             _viewModel.CodePreviewRequested += OnCodePreviewRequested;
+            _viewModel.WidgetCanvasFocusRequested += OnWidgetCanvasFocusRequested;
         }
 
         base.OnDataContextChanged(e);
@@ -104,6 +106,21 @@ public partial class MainWindow : Window
         };
 
         await previewWindow.ShowDialog(this);
+    }
+
+    private void OnWidgetCanvasFocusRequested(object? sender, Rect rect)
+    {
+        WorkbenchCanvas.CenterOnPixelRect(rect);
+    }
+
+    private async void OnCanvasOverlayClicked(object? sender, CanvasOverlayClickEventArgs e)
+    {
+        if (_viewModel is null || !_viewModel.IsWidgetMode)
+        {
+            return;
+        }
+
+        await _viewModel.SelectWidgetNodeByCoordinateAsync(e.PixelX, e.PixelY);
     }
 
     private static DesktopWindowState MapWindowState(WindowState state)

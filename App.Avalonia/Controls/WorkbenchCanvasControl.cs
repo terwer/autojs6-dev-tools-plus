@@ -39,6 +39,7 @@ public sealed class WorkbenchCanvasControl : Control
     private Point _lastPointerPosition;
     private DateTime _lastPointerMoveAtUtc = DateTime.UtcNow;
     private Vector _inertiaVelocity;
+    private double _dragDistance;
     private CropInteractionMode _cropInteractionMode = CropInteractionMode.None;
     private Rect _cropInteractionStartRect;
     private Point _cropInteractionStartPoint;
@@ -60,6 +61,7 @@ public sealed class WorkbenchCanvasControl : Control
 
     public event EventHandler<CanvasViewportChangedEventArgs>? ViewportChanged;
     public event EventHandler<CanvasPointerInfoChangedEventArgs>? PointerInfoChanged;
+    public event EventHandler<CanvasOverlayClickEventArgs>? OverlayClicked;
 
     public Bitmap? CanvasBitmap
     {
@@ -143,6 +145,22 @@ public sealed class WorkbenchCanvasControl : Control
         InvalidateVisual();
     }
 
+    public void CenterOnPixelRect(Rect pixelRect)
+    {
+        if (CanvasBitmap is null)
+        {
+            return;
+        }
+
+        var stageRect = GetStageRect(new Rect(Bounds.Size));
+        var targetCenter = new Point(pixelRect.Center.X, pixelRect.Center.Y);
+        _panOffset = CalculatePanOffsetForSourcePoint(stageRect, targetCenter, stageRect.Center);
+        _panOffset = ClampPanOffset(_panOffset, stageRect);
+        StopInertia();
+        RaiseViewportChanged();
+        InvalidateVisual();
+    }
+
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
@@ -180,6 +198,7 @@ public sealed class WorkbenchCanvasControl : Control
         _lastPointerPosition = e.GetPosition(this);
         _lastPointerMoveAtUtc = DateTime.UtcNow;
         _inertiaVelocity = default;
+        _dragDistance = 0d;
         e.Pointer.Capture(this);
         e.Handled = true;
     }
@@ -209,6 +228,7 @@ public sealed class WorkbenchCanvasControl : Control
 
         var currentPosition = e.GetPosition(this);
         var delta = currentPosition - _lastPointerPosition;
+        _dragDistance += Math.Sqrt(delta.X * delta.X + delta.Y * delta.Y);
         var now = DateTime.UtcNow;
         var elapsed = Math.Max((now - _lastPointerMoveAtUtc).TotalSeconds, 0.001d);
 
@@ -236,6 +256,15 @@ public sealed class WorkbenchCanvasControl : Control
 
         if (!_isDragging)
         {
+            return;
+        }
+
+        if (_dragDistance <= 4d && _currentSourcePoint is { } point)
+        {
+            _isDragging = false;
+            e.Pointer.Capture(null);
+            RaiseOverlayClicked((int)Math.Round(point.X), (int)Math.Round(point.Y));
+            e.Handled = true;
             return;
         }
 
@@ -658,7 +687,8 @@ public sealed class WorkbenchCanvasControl : Control
         foreach (var overlay in OverlayRects)
         {
             var pen = new Pen(new SolidColorBrush(overlay.StrokeColor), overlay.StrokeThickness);
-            context.DrawRectangle(null, pen, overlay.PixelRect);
+            var fillBrush = overlay.FillColor is null ? null : new SolidColorBrush(overlay.FillColor.Value);
+            context.DrawRectangle(fillBrush, pen, overlay.PixelRect);
 
             if (!string.IsNullOrWhiteSpace(overlay.Label))
             {
@@ -854,6 +884,15 @@ public sealed class WorkbenchCanvasControl : Control
             PixelX = _currentSourcePoint is null ? null : (int)Math.Round(_currentSourcePoint.Value.X),
             PixelY = _currentSourcePoint is null ? null : (int)Math.Round(_currentSourcePoint.Value.Y),
             IsCrosshairVisible = _isCrosshairVisible
+        });
+    }
+
+    private void RaiseOverlayClicked(int pixelX, int pixelY)
+    {
+        OverlayClicked?.Invoke(this, new CanvasOverlayClickEventArgs
+        {
+            PixelX = pixelX,
+            PixelY = pixelY
         });
     }
 

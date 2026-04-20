@@ -35,6 +35,21 @@ public partial class MainWindowViewModel : ViewModelBase
     private bool _isWidgetBoundsVisible = true;
 
     [ObservableProperty]
+    private bool _showTextWidgets = true;
+
+    [ObservableProperty]
+    private bool _showButtonWidgets = true;
+
+    [ObservableProperty]
+    private bool _showImageWidgets = true;
+
+    [ObservableProperty]
+    private bool _showOtherWidgets = true;
+
+    [ObservableProperty]
+    private double _widgetOverlayOpacity = 0.55d;
+
+    [ObservableProperty]
     private bool _isTemplateSourceCurrent = true;
 
     [ObservableProperty]
@@ -81,6 +96,15 @@ public partial class MainWindowViewModel : ViewModelBase
 
     [ObservableProperty]
     private string _propertyId = "-";
+
+    [ObservableProperty]
+    private string _propertyBounds = "-";
+
+    [ObservableProperty]
+    private string _propertyPackage = "-";
+
+    [ObservableProperty]
+    private string _propertyClickable = "-";
 
     [ObservableProperty]
     private string _widgetSelectionHint = "尚未选中控件。进入控件模式后，可在中央画布中点击控件边界框查看属性。";
